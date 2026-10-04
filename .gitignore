@@ -39,3 +39,5 @@ Thumbs.db
 
 admin-starter-kit/node_modules/
 admin-full-version/node_modules/
+whatsapp-gateway/node_modules/
+whatsapp-gateway/auth_info/
