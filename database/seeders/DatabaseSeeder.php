@@ -16,9 +16,12 @@ class DatabaseSeeder extends Seeder
             CompanySettingSeeder::class,
         ]);
         User::firstOrCreate(['username' => 'admin'], [
-            'name' => 'Administrador Dueño', 'email' => 'admin@servimatica.com',
-            'password' => Hash::make('password'), 'pin_code' => Hash::make('1234'),
-            'role' => 'dueno', 'status' => 'active',
+            'name' => 'Administrador Dueño',
+            'email' => 'admin@servimatica.com',
+            'password' => Hash::make('password'),
+            'pin_code' => Hash::make('1234'),
+            'role' => 'dueno',
+            'status' => 'active',
         ]);
     }
 }
