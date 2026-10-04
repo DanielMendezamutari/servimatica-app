@@ -1,7 +1,7 @@
 {
   "name": "servimatica-whatsapp-gateway",
   "version": "1.0.0",
-  "description": "Gateway ligero para conectar WhatsApp físico con Servimática AI Bot",
+  "description": "Gateway ultra ligero para WhatsApp en BanaHosting",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -9,8 +9,6 @@
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.12",
-    "axios": "^1.7.9",
-    "express": "^4.21.2",
     "pino": "^9.6.0",
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0"
