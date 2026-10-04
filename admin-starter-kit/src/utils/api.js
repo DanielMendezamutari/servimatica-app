@@ -4,7 +4,7 @@ import { accessToken, clearSession } from './session'
 export const $api = ofetch.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   retry: 0,
-  timeout: 15000,
+  timeout: 30000,
   onRequest({ options }) {
     const headers = new Headers(options.headers)
 

@@ -19,6 +19,11 @@ class SalesRoleAccessTest extends TestCase
         $login->assertJsonPath('userAbilityRules', [
             ['action' => 'read', 'subject' => 'Dashboard'],
             ['action' => 'read', 'subject' => 'Product'],
+            ['action' => 'manage', 'subject' => 'Pos'],
+            ['action' => 'manage', 'subject' => 'Quote'],
+            ['action' => 'manage', 'subject' => 'CashShift'],
+            ['action' => 'read', 'subject' => 'Sale'],
+            ['action' => 'manage', 'subject' => 'Client'],
         ]);
         $headers = ['Authorization' => 'Bearer '.$login->json('accessToken')];
         foreach ([['GET', '/api/users'], ['POST', '/api/users'], ['PUT', '/api/users/1'], ['PATCH', '/api/users/1/toggle-status']] as [$method, $url]) {

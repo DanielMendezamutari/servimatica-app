@@ -5,7 +5,7 @@ import { _setDirAttr } from '@layouts/utils'
 // ℹ️ We should not import themeConfig here but in urgency we are doing it for now
 import { layoutConfig } from '@themeConfig'
 
-export const namespaceConfig = str => `${layoutConfig.app.title}-${str}`
+export const namespaceConfig = str => `servimatica-${str}`
 export const cookieRef = (key, defaultValue) => {
   return useCookie(namespaceConfig(key), { default: () => defaultValue })
 }

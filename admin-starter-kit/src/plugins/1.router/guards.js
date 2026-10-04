@@ -25,10 +25,11 @@ export const setupGuards = router => {
   })
 
   const verifyRestoredPage = async () => {
-    if (router.currentRoute.value.path === '/login') return
+    if (router.currentRoute.value.path === '/login' || router.currentRoute.value.meta?.public) return
     if (!accessToken()) {
       clearSession()
       await router.replace('/login')
+
       
       return
     }

@@ -1,4 +1,7 @@
 import { createMongoAbility } from '@casl/ability'
 
-// Reutilizado del catálogo admin-full-version; las reglas llegan de la API.
-export const ability = createMongoAbility([])
+export const initialAbility = [
+  { action: 'read', subject: 'Auth' },
+]
+
+export const ability = createMongoAbility(initialAbility)

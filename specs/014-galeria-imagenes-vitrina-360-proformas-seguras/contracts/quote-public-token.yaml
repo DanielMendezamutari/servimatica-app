@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: Servimática Secure Public Quote Viewer API
+  version: 1.0.0
+paths:
+  /api/quotes/public/{public_token}:
+    get:
+      summary: Visualización pública de cotización mediante token no secuencial
+      description: Acceso exclusivo para clientes que poseen el enlace criptográfico de WhatsApp. No permite enumeración por ID numérico.
+      parameters:
+        - name: public_token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Renderizado HTML/PDF responsivo para celular de la proforma
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Proforma no encontrada o token inválido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "La cotización solicitada no existe o el enlace ha caducado."

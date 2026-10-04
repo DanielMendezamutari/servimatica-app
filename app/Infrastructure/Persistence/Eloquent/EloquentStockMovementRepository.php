@@ -9,8 +9,22 @@ final class EloquentStockMovementRepository implements StockMovementRepositoryIn
             $product=ProductModel::lockForUpdate()->findOrFail($productId);
             $before=$product->stock; $after=(new StockQuantity($before))->adjust($data['type'],(int)$data['quantity'])->value;
             $product->update(['stock'=>$after]);
-            $movement=StockMovementModel::create(['product_id'=>$productId,'user_id'=>$userId,
-                'type'=>$data['type'],'quantity'=>$data['quantity'],'previous_stock'=>$before,'new_stock'=>$after,'reason'=>$data['reason']]);
+            $unitCost = isset($data['unit_cost']) ? (float)$data['unit_cost'] : (float)($product->cost_price ?? 0.0);
+            $totalCost = round((int)$data['quantity'] * $unitCost, 2);
+
+            $movement=StockMovementModel::create([
+                'product_id'=>$productId,
+                'user_id'=>$userId,
+                'type'=>$data['type'],
+                'quantity'=>$data['quantity'],
+                'previous_stock'=>$before,
+                'new_stock'=>$after,
+                'reason'=>$data['reason'],
+                'unit_cost'=>$unitCost,
+                'total_cost'=>$totalCost,
+                'reference_type'=>'adjustment',
+                'reference_id'=>null,
+            ]);
             return ['productId'=>$productId,'productName'=>$product->name,'previousStock'=>$before,'newStock'=>$after,'movement'=>$this->map($movement->load('user'))->toArray()];
         },3);
     }

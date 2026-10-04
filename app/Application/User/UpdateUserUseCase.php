@@ -31,6 +31,14 @@ final readonly class UpdateUserUseCase
             isset($data['pin']) && $data['pin'] !== '' ? PinCode::fromPlainText($data['pin']) : $existing->pinCode,
             Role::from($data['role']),
             $existing->status,
+            $data['ci'] ?? $existing->ci,
+            $data['phone'] ?? $existing->phone,
+            $data['address'] ?? $existing->address,
+            $data['gender'] ?? $existing->gender,
+            isset($data['sales_commission']) ? (float) $data['sales_commission'] : $existing->salesCommission,
+            $data['branch'] ?? $existing->branch,
+            array_key_exists('avatar', $data) ? $data['avatar'] : $existing->avatar,
+            null,
             $existing->createdAt
         ));
     }

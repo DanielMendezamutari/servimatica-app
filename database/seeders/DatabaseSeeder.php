@@ -10,7 +10,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(CategorySeeder::class);
+        $this->call([
+            CategorySeeder::class,
+            PaymentMethodSeeder::class,
+            CompanySettingSeeder::class,
+        ]);
         User::firstOrCreate(['username' => 'admin'], [
             'name' => 'Administrador Dueño', 'email' => 'admin@servimatica.com',
             'password' => Hash::make('password'), 'pin_code' => Hash::make('1234'),

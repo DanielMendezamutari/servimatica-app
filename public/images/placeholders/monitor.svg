@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="monStudioBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#EDF2F7" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#monStudioBg)" rx="12" />
+  <g transform="translate(135, 70)">
+    <rect x="15" y="10" width="100" height="66" rx="6" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2.5" />
+    <rect x="23" y="18" width="84" height="50" rx="3" fill="#F1F5F9" />
+    <rect x="60" y="76" width="10" height="18" fill="#94A3B8" />
+    <rect x="45" y="94" width="40" height="4" rx="2" fill="#94A3B8" />
+  </g>
+  <text x="200" y="215" text-anchor="middle" fill="#475569" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" letter-spacing="1">MONITOR</text>
+  <text x="200" y="235" text-anchor="middle" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11">Servimática • Pantallas y Monitores</text>
+</svg>

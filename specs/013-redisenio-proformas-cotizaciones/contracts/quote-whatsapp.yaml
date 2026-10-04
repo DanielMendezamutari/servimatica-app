@@ -1,0 +1,59 @@
+openapi: 3.0.0
+info:
+  title: Servimática Quote WhatsApp & Print API
+  version: 1.0.0
+paths:
+  /api/quotes/{id}/whatsapp-link:
+    get:
+      summary: Generar enlace y texto comercial para WhatsApp
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: phone
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Teléfono alternativo opcional para el envío
+      responses:
+        '200':
+          description: Enlace y mensaje persuasivo formateado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  whatsapp_link:
+                    type: string
+                    example: "https://wa.me/59171234567?text=..."
+                  formatted_message:
+                    type: string
+                  phone_used:
+                    type: string
+
+  /api/quotes/{id}/print:
+    get:
+      summary: Vista membretada e imprimible oficial de la cotización
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: autoprint
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: HTML estilizado para pantalla e impresión A4/Carta
+          content:
+            text/html:
+              schema:
+                type: string

@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: Servimática Public Catalog API (TikTok Live Vitrina)
+  version: 1.0.0
+paths:
+  /api/public/catalog:
+    get:
+      summary: Catálogo comercial público optimizado para celulares y TikTok Live
+      description: Retorna productos activos con stock para visitantes anónimos sin exponer datos de costos o proveedores.
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: brand_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: condition
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [nuevo, open_box, usado, reacondicionado]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Listado público de productos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        sku:
+                          type: string
+                        condition:
+                          type: string
+                        category_name:
+                          type: string
+                        brand_name:
+                          type: string
+                        price:
+                          type: number
+                          format: float
+                        warranty_days:
+                          type: integer
+                        warranty_label:
+                          type: string
+                        cover_image_url:
+                          type: string
+                        gallery_urls:
+                          type: array
+                          items:
+                            type: string
+                        in_stock:
+                          type: boolean
+                        stock_available:
+                          type: integer
+                        whatsapp_message_link:
+                          type: string
+                  total:
+                    type: integer
+                  current_page:
+                    type: integer
+                  last_page:
+                    type: integer

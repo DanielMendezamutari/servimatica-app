@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="defaultStudioBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC" />
+      <stop offset="100%" stop-color="#EDF2F7" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#defaultStudioBg)" rx="12" />
+  <g transform="translate(145, 80)">
+    <rect x="15" y="10" width="80" height="80" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="2.5" />
+    <path d="M35 50 L50 35 L75 60 L65 70 Z" fill="#E2E8F0" />
+    <circle cx="45" cy="35" r="7" fill="#CBD5E1" />
+  </g>
+  <text x="200" y="215" text-anchor="middle" fill="#475569" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600" letter-spacing="1">SERVIMÁTICA</text>
+  <text x="200" y="235" text-anchor="middle" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11">Tecnología de Alta Calidad</text>
+</svg>

@@ -34,8 +34,21 @@ final class EloquentUserRepository implements UserRepositoryInterface
     public function save(User $user): User
     {
         $model = $user->id ? UserModel::findOrFail($user->id) : new UserModel();
-        $model->fill(['name' => $user->name, 'username' => $user->username->value, 'email' => $user->email->value,
-            'password' => $user->password->hash, 'pin_code' => $user->pinCode->hash, 'role' => $user->role->value]);
+        $model->fill([
+            'name' => $user->name,
+            'ci' => $user->ci,
+            'username' => $user->username->value,
+            'email' => $user->email->value,
+            'phone' => $user->phone,
+            'address' => $user->address,
+            'gender' => $user->gender,
+            'sales_commission' => $user->salesCommission,
+            'branch' => $user->branch,
+            'avatar' => $user->avatar,
+            'password' => $user->password->hash,
+            'pin_code' => $user->pinCode->hash,
+            'role' => $user->role->value,
+        ]);
         if (!$model->exists) {
             $model->status = $user->status->value;
         }
@@ -65,6 +78,14 @@ final class EloquentUserRepository implements UserRepositoryInterface
             new PinCode($model->pin_code),
             Role::from($model->role),
             UserStatus::from($model->status),
+            $model->ci,
+            $model->phone,
+            $model->address,
+            $model->gender,
+            (float) ($model->sales_commission ?? 0.0),
+            $model->branch ?? 'Casa Matriz',
+            $model->avatar,
+            $model->avatar_url,
             $model->created_at?->toISOString()
         );
     }

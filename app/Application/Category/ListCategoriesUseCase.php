@@ -10,8 +10,8 @@ final readonly class ListCategoriesUseCase
     {
     }
 
-    public function execute(string $search = ''): array
+    public function execute(string $search = '', bool $tree = false): array
     {
-        return array_map(fn ($category) => $category->toArray(), $this->categories->all($search));
+        return array_map(fn ($category) => $category->toArray(), $this->categories->all($search, $tree));
     }
 }

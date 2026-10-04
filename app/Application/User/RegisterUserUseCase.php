@@ -25,7 +25,14 @@ final readonly class RegisterUserUseCase
             Password::fromPlainText($data['password']),
             PinCode::fromPlainText($data['pin']),
             Role::from($data['role']),
-            UserStatus::Active
+            UserStatus::Active,
+            $data['ci'] ?? null,
+            $data['phone'] ?? null,
+            $data['address'] ?? null,
+            $data['gender'] ?? null,
+            (float) ($data['sales_commission'] ?? 0.0),
+            $data['branch'] ?? 'Casa Matriz',
+            $data['avatar'] ?? null
         ));
     }
 }

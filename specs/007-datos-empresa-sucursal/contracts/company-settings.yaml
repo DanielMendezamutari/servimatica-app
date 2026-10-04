@@ -1,0 +1,185 @@
+openapi: 3.0.3
+info:
+  title: API de Configuración de Empresa y Sucursal
+  version: 1.0.0
+  description: Endpoints para la gestión centralizada de datos institucionales de la tienda en Servimática App.
+
+paths:
+  /api/company-settings:
+    get:
+      summary: Consultar la configuración completa de la empresa (Exclusivo Dueño)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Datos institucionales completos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanySettingResponse'
+        '401':
+          description: No autenticado
+        '403':
+          description: Acceso denegado (Requiere rol Dueño)
+
+    post:
+      summary: Actualizar la configuración institucional y logotipo (Exclusivo Dueño)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UpdateCompanySettingRequest'
+      responses:
+        '200':
+          description: Configuración actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Información de la empresa actualizada exitosamente.
+                  data:
+                    $ref: '#/components/schemas/CompanySettingResponse'
+        '422':
+          description: Error de validación en los datos enviados
+
+  /api/company-settings/public:
+    get:
+      summary: Consulta pública y ligera de identidad de marca (para frontend, vendedor y clientes)
+      responses:
+        '200':
+          description: Datos públicos de la tienda
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trade_name:
+                    type: string
+                    example: Servimática PC
+                  slogan:
+                    type: string
+                    example: Venta de Equipos de Computación y Servicio Técnico
+                  branch_name:
+                    type: string
+                    example: Sucursal Central
+                  city:
+                    type: string
+                    example: Riberalta, Beni — Bolivia
+                  address:
+                    type: string
+                    example: Av. Principal N° 123
+                  mobile:
+                    type: string
+                    example: '77012345'
+                  email:
+                    type: string
+                    example: ventas@servimatica.com
+                  logo_url:
+                    type: string
+                    example: http://127.0.0.1:5173/images/logo_servimatica.png
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CompanySettingResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        trade_name:
+          type: string
+          example: Servimática PC
+        legal_name:
+          type: string
+          nullable: true
+          example: Servimática Bolivia S.R.L.
+        tax_id:
+          type: string
+          nullable: true
+          example: '1029384756'
+        slogan:
+          type: string
+          nullable: true
+          example: Venta de Equipos de Computación, Insumos y Servicio Técnico
+        branch_name:
+          type: string
+          example: Sucursal Central
+        city:
+          type: string
+          example: Riberalta, Beni — Bolivia
+        address:
+          type: string
+          example: Calle Principal N° 45
+        mobile:
+          type: string
+          example: '77012345'
+        phone:
+          type: string
+          nullable: true
+          example: '3-8521234'
+        email:
+          type: string
+          nullable: true
+          example: contacto@servimatica.com
+        logo_url:
+          type: string
+          nullable: true
+          example: http://127.0.0.1:5173/storage/company/logo.png
+        default_quote_terms:
+          type: string
+          nullable: true
+          example: Precios válidos por 7 días. Sujeto a disponibilidad de inventario.
+        receipt_footer_message:
+          type: string
+          nullable: true
+          example: ¡Gracias por su preferencia! Conserve este ticket para su garantía.
+
+    UpdateCompanySettingRequest:
+      type: object
+      required:
+        - trade_name
+        - branch_name
+        - city
+        - address
+        - mobile
+      properties:
+        trade_name:
+          type: string
+        legal_name:
+          type: string
+        tax_id:
+          type: string
+        slogan:
+          type: string
+        branch_name:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+        mobile:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        logo:
+          type: string
+          format: binary
+          description: Archivo de imagen del logotipo (.png, .jpg, .webp, .svg, máx 2MB)
+        default_quote_terms:
+          type: string
+        receipt_footer_message:
+          type: string

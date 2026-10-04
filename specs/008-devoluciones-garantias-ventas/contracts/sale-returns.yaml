@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: API de Devoluciones de Venta y Gestión de Garantías
+  version: 1.0.0
+  description: Endpoints para verificación de garantías técnicas, registro de devoluciones y generación de notas de cambio en Servimática App.
+
+paths:
+  /api/sales/{id}/warranty-check:
+    get:
+      summary: Consultar estado de garantía y elegibilidad de devolución de los ítems de una venta
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle de ítems con vigencia de garantía y cantidades devueltas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleWarrantyCheckResponse'
+        '404':
+          description: Venta no encontrada
+
+  /api/sales/{id}/returns:
+    post:
+      summary: Procesar una devolución de venta (Cambio físico, reembolso o nota de crédito)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaleReturnRequest'
+      responses:
+        '201':
+          description: Devolución procesada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Devolución procesada exitosamente.
+                  data:
+                    $ref: '#/components/schemas/SaleReturnResponse'
+        '422':
+          description: Error de validación (stock insuficiente para cambio, caja insuficiente o cantidad excede venta)
+        '403':
+          description: Permisos insuficientes (reembolso en efectivo exclusivo de Dueño)
+
+  /api/sale-returns:
+    get:
+      summary: Listar historial de devoluciones con paginación y filtros
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: resolution
+          in: query
+          schema:
+            type: string
+            enum: [cambio_fisico, reembolso_efectivo, nota_credito]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista paginada de devoluciones
+
+  /api/sale-returns/{id}:
+    get:
+      summary: Obtener detalle completo de una devolución
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalle de la devolución
+
+  /api/sale-returns/{id}/receipt:
+    get:
+      summary: Vista HTML de impresión para Comprobante de Devolución / Cambio de Garantía
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [thermal, letter]
+            default: thermal
+      responses:
+        '200':
+          description: Render HTML imprimible con membrete dinámico de empresa
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SaleWarrantyCheckResponse:
+      type: object
+      properties:
+        sale_id:
+          type: integer
+        invoice_number:
+          type: string
+        sale_date:
+          type: string
+        client_name:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              sale_item_id:
+                type: integer
+              product_id:
+                type: integer
+              product_name:
+                type: string
+              original_quantity:
+                type: integer
+              returned_quantity:
+                type: integer
+              remaining_quantity:
+                type: integer
+              unit_price:
+                type: number
+              warranty_days:
+                type: integer
+              warranty_expires_at:
+                type: string
+                nullable: true
+              is_warranty_valid:
+                type: boolean
+              days_remaining:
+                type: integer
+              serial_number:
+                type: string
+                nullable: true
+
+    CreateSaleReturnRequest:
+      type: object
+      required:
+        - resolution
+        - reason
+        - items
+      properties:
+        resolution:
+          type: string
+          enum: [cambio_fisico, reembolso_efectivo, nota_credito]
+        reason:
+          type: string
+          example: Falla en lectura de sectores defectuosos tras 1 mes de uso.
+        cash_shift_id:
+          type: integer
+          nullable: true
+          description: Requerido si resolution es reembolso_efectivo
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - sale_item_id
+              - quantity
+              - condition
+            properties:
+              sale_item_id:
+                type: integer
+              quantity:
+                type: integer
+              condition:
+                type: string
+                enum: [stock_operativo, stock_defectuoso_rma]
+              serial_number:
+                type: string
+                nullable: true
+
+    SaleReturnResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        return_number:
+          type: string
+        sale_id:
+          type: integer
+        client_name:
+          type: string
+        resolution:
+          type: string
+        total_refund_amount:
+          type: number
+        reason:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+        items:
+          type: array
+          items:
+            type: object

@@ -27,6 +27,8 @@ final class AuthenticateJwt
             return response()->json(['message' => 'Su cuenta se encuentra inactiva. Consulte con administración.'], 403);
         }
         auth()->shouldUse('api');
-        return $next($request)->header('Cache-Control', 'no-store, private');
+        $response = $next($request);
+        $response->headers->set('Cache-Control', 'no-store, private');
+        return $response;
     }
 }
