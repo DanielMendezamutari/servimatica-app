@@ -1,6 +1,7 @@
 import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
+  Browsers,
 } from '@whiskeysockets/baileys'
 import fs from 'fs'
 import path from 'path'
@@ -48,11 +49,9 @@ async function connectToWhatsApp() {
     auth: state,
     logger,
     printQRInTerminal: false,
-    browser: ['Servimática Bot', 'Chrome', '124.0.0'],
+    browser: Browsers.ubuntu('Chrome'),
     syncFullHistory: false,
-    getMessage: async key => {
-      return undefined
-    },
+    getMessage: async key => undefined,
   })
 
   sock.ev.on('creds.update', saveCreds)
@@ -110,8 +109,11 @@ async function connectToWhatsApp() {
       // Ignorar si no hay contenido de mensaje
       if (!msg.message) continue
 
-      // Ignorar mensajes enviados por nosotros mismos
-      if (msg.key.fromMe) continue
+      // Ignorar mensajes enviados por nosotros mismos (evita bucles infinitos)
+      if (msg.key.fromMe) {
+        console.log('ℹ️ [Aviso] Mensaje enviado desde este mismo teléfono ignorado. El bot solo responde a clientes externos que te escriben desde otro celular.')
+        continue
+      }
 
       const remoteJid = msg.key.remoteJid || ''
 
