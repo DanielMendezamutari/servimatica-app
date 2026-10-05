@@ -48,8 +48,11 @@ async function connectToWhatsApp() {
     auth: state,
     logger,
     printQRInTerminal: false,
-    browser: ['Servimática Bot', 'Chrome', '120.0.0'],
+    browser: ['Servimática Bot', 'Chrome', '124.0.0'],
     syncFullHistory: false,
+    getMessage: async key => {
+      return undefined
+    },
   })
 
   sock.ev.on('creds.update', saveCreds)
