@@ -159,8 +159,6 @@ async function connectToWhatsApp() {
         continue
       }
 
-      const remoteJid = msg.key.remoteJid || ''
-
       // Ignorar mensajes de grupos (@g.us), estados (@broadcast) o newsletters
       if (remoteJid.endsWith('@g.us') || remoteJid.includes('@broadcast') || remoteJid.includes('@newsletter')) {
         continue
