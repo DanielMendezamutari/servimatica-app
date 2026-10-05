@@ -19,6 +19,28 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://servimatica.ribersoft.co
 let sock = null
 const logger = pino({ level: 'silent' })
 
+// Extractor robusto de texto compatible con todas las versiones de WhatsApp
+function extractMessageText(message) {
+  if (!message) return ''
+
+  // Desempaquetar mensajes temporales o de una sola vez
+  const realMsg =
+    message.ephemeralMessage?.message ||
+    message.viewOnceMessage?.message ||
+    message.viewOnceMessageV2?.message ||
+    message.documentWithCaptionMessage?.message ||
+    message
+
+  return (
+    realMsg.conversation ||
+    realMsg.extendedTextMessage?.text ||
+    realMsg.imageMessage?.caption ||
+    realMsg.videoMessage?.caption ||
+    realMsg.documentMessage?.caption ||
+    ''
+  )
+}
+
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR)
 
@@ -27,6 +49,7 @@ async function connectToWhatsApp() {
     logger,
     printQRInTerminal: false,
     browser: ['Servimática Bot', 'Chrome', '120.0.0'],
+    syncFullHistory: false,
   })
 
   sock.ev.on('creds.update', saveCreds)
@@ -39,20 +62,16 @@ async function connectToWhatsApp() {
       console.log('📱 ESCANEA ESTE CÓDIGO QR CON TU WHATSAPP:')
       console.log('O abre en tu navegador: https://servimatica.ribersoft.com/whatsapp_qr.png')
       console.log('======================================================\n')
-      
-      // 1. Mostrar en consola
+
       qrcodeTerminal.generate(qr, { small: true })
 
-      // 2. Guardar imagen PNG en la carpeta pública del sitio web
       try {
         await QRCode.toFile(PUBLIC_QR_PATH, qr, {
           width: 380,
           margin: 2,
           color: { dark: '#000000', light: '#ffffff' },
         })
-      } catch (err) {
-        // Ignorar si no tiene permisos de escritura en public
-      }
+      } catch (err) {}
     }
 
     if (connection === 'close') {
@@ -71,58 +90,69 @@ async function connectToWhatsApp() {
       }
     } else if (connection === 'open') {
       const connectedNumber = sock.user?.id ? sock.user.id.split(':')[0] : 'Conectado'
-
-      // Eliminar imagen del QR por seguridad
       try { fs.unlinkSync(PUBLIC_QR_PATH) } catch (e) {}
 
       console.log('\n======================================================')
       console.log(`✅ ¡WHATSAPP CONECTADO EXITOSAMENTE AL HOSTING!`)
       console.log(`Número vinculado: +${connectedNumber}`)
       console.log(`Webhook enlazado: ${WEBHOOK_URL}`)
+      console.log('👂 Escuchando mensajes entrantes de clientes...')
       console.log('======================================================\n')
     }
   })
 
-  // Escuchar mensajes entrantes
+  // Escuchar mensajes entrantes (notify y append)
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return
-
     for (const msg of messages) {
-      if (!msg.message || msg.key.fromMe) continue
+      // Ignorar si no hay contenido de mensaje
+      if (!msg.message) continue
+
+      // Ignorar mensajes enviados por nosotros mismos
+      if (msg.key.fromMe) continue
+
       const remoteJid = msg.key.remoteJid || ''
-      if (remoteJid.endsWith('@g.us')) continue // Ignorar grupos
 
-      const senderPhone = remoteJid.replace('@s.whatsapp.net', '')
-      const text =
-        msg.message.conversation ||
-        msg.message.extendedTextMessage?.text ||
-        msg.message.imageMessage?.caption ||
-        ''
+      // Ignorar mensajes de grupos (@g.us), estados (@broadcast) o newsletters
+      if (remoteJid.endsWith('@g.us') || remoteJid.includes('@broadcast') || remoteJid.includes('@newsletter')) {
+        continue
+      }
 
+      const text = extractMessageText(msg.message)
       if (!text || text.trim() === '') continue
 
       const pushName = msg.pushName || 'Cliente'
-      console.log(`📩 Mensaje recibido de +${senderPhone} (${pushName}): "${text}"`)
+      console.log(`\n📩 Mensaje recibido de ${remoteJid} (${pushName}): "${text}"`)
 
       try {
-        // Llamar al webhook nativo usando fetch global de Node 18/20
+        console.log(`🌐 Consultando IA en el servidor Servimática...`)
         const response = await fetch(WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: senderPhone,
-            text: text,
+            from: remoteJid,
+            text: text.trim(),
             pushName: pushName,
             timestamp: Math.floor(Date.now() / 1000),
           }),
         })
 
+        if (!response.ok) {
+          console.error(`❌ Webhook respondió con error HTTP: ${response.status} ${response.statusText}`)
+          continue
+        }
+
         const data = await response.json()
         const reply = data?.result?.reply
 
         if (reply && reply.trim() !== '') {
-          console.log(`🤖 IA respondió a +${senderPhone}: "${reply.substring(0, 80)}..."`)
-          await sock.sendMessage(remoteJid, { text: reply })
+          console.log(`🤖 IA respondió (${reply.length} caracteres):`)
+          console.log(`   "${reply.substring(0, 100)}..."`)
+          
+          // Enviar respuesta al chat correspondiente (compatible con @s.whatsapp.net y @lid)
+          await sock.sendMessage(remoteJid, { text: reply }, { quoted: msg })
+          console.log(`📤 Mensaje enviado exitosamente a WhatsApp.`)
+        } else {
+          console.log(`ℹ️ Webhook procesado sin mensaje saliente (status: ${data?.status || 'ok'}).`)
         }
       } catch (err) {
         console.error(`❌ Error al conectar con webhook de Servimática:`, err.message)
@@ -131,5 +161,4 @@ async function connectToWhatsApp() {
   })
 }
 
-// Iniciar conexión
 connectToWhatsApp()
