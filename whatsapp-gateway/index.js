@@ -142,28 +142,38 @@ async function connectToWhatsApp() {
         }
       }
 
-      // Ignorar paquetes de protocolo interno o sincronización de WhatsApp
+      // Ignorar paquetes de protocolo interno o sincronización técnica de WhatsApp
       if (!msg.message || msg.message.protocolMessage || msg.message.senderKeyDistributionMessage) {
         continue
       }
 
+      const remoteJid = msg.key?.remoteJid || ''
+      const isFromMe = msg.key?.fromMe ? true : false
+
+      console.log(`\n🔔 [Mensaje entrante detectado] Remitente: ${remoteJid} | ¿Es de mí mismo?: ${isFromMe ? 'SÍ' : 'NO'}`)
+
       // Ignorar mensajes enviados por nosotros mismos (evita bucles infinitos)
-      if (msg.key.fromMe) {
+      if (isFromMe) {
+        console.log('   ℹ️ Omitido: enviado desde este mismo número celular.')
         continue
       }
 
-      const remoteJid = msg.key.remoteJid || ''
-
       // Ignorar mensajes de grupos (@g.us), estados (@broadcast) o newsletters
       if (remoteJid.endsWith('@g.us') || remoteJid.includes('@broadcast') || remoteJid.includes('@newsletter')) {
+        console.log('   ℹ️ Omitido: es de un grupo o canal.')
         continue
       }
 
       const text = extractMessageText(msg.message)
-      if (!text || text.trim() === '') continue
+      console.log(`   📝 Texto extraído: "${text}"`)
+
+      if (!text || text.trim() === '') {
+        console.log('   ⚠️ Texto vacío o tipo de mensaje no compatible.')
+        continue
+      }
 
       const pushName = msg.pushName || 'Cliente'
-      console.log(`\n📩 Mensaje recibido de ${remoteJid} (${pushName}): "${text}"`)
+      console.log(`📩 Procesando consulta de ${pushName}: "${text}"`)
 
       try {
         console.log(`🌐 Consultando IA en el servidor Servimática...`)
