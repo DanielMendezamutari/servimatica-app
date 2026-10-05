@@ -142,8 +142,13 @@ async function connectToWhatsApp() {
         }
       }
 
-      // Ignorar paquetes de protocolo interno o sincronización técnica de WhatsApp
-      if (!msg.message || msg.message.protocolMessage || msg.message.senderKeyDistributionMessage) {
+      // Ignorar si no hay contenido de mensaje
+      if (!msg.message) {
+        continue
+      }
+
+      // Si es un paquete de protocolo puro sin texto de usuario
+      if (msg.message.protocolMessage && !extractMessageText(msg.message)) {
         continue
       }
 
