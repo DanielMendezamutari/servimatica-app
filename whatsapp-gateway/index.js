@@ -133,12 +133,7 @@ async function connectToWhatsApp() {
 
   // Escuchar mensajes entrantes (notify y append)
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    console.log(`\n⚡ [WhatsApp Event] Recibidos ${messages.length} mensaje(s) (tipo: ${type})`)
-
     for (const msg of messages) {
-      const remoteJid = msg.key?.remoteJid || ''
-      console.log(`   🔎 Remitente: ${remoteJid} | ¿De mí mismo?: ${msg.key?.fromMe ? 'SÍ' : 'NO'}`)
-
       if (msg.key?.id && msg.message) {
         msgStore.set(msg.key.id, msg.message)
         if (msgStore.size > 500) {
@@ -147,17 +142,17 @@ async function connectToWhatsApp() {
         }
       }
 
-      // Ignorar si no hay contenido de mensaje
-      if (!msg.message) {
-        console.log('   ⚠️ Mensaje sin contenido de texto utilizable.')
+      // Ignorar paquetes de protocolo interno o sincronización de WhatsApp
+      if (!msg.message || msg.message.protocolMessage || msg.message.senderKeyDistributionMessage) {
         continue
       }
 
       // Ignorar mensajes enviados por nosotros mismos (evita bucles infinitos)
       if (msg.key.fromMe) {
-        console.log('ℹ️ [Aviso] Mensaje enviado desde este mismo teléfono ignorado. El bot solo responde a clientes externos que te escriben desde otro celular.')
         continue
       }
+
+      const remoteJid = msg.key.remoteJid || ''
 
       // Ignorar mensajes de grupos (@g.us), estados (@broadcast) o newsletters
       if (remoteJid.endsWith('@g.us') || remoteJid.includes('@broadcast') || remoteJid.includes('@newsletter')) {
