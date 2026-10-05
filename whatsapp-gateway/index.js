@@ -21,6 +21,16 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://servimatica.ribersoft.co
 let sock = null
 const logger = pino({ level: 'silent' })
 
+// Evitar que errores de cifrado interno de WhatsApp (como Bad MAC al enviarse entre dos apps del mismo celular) cierren el proceso
+process.on('uncaughtException', err => {
+  if (err?.message?.includes('Bad MAC')) return
+  console.error('⚠️ Error no fatal:', err.message)
+})
+
+process.on('unhandledRejection', reason => {
+  if (reason?.message?.includes('Bad MAC')) return
+})
+
 // Extractor robusto de texto compatible con todas las versiones de WhatsApp
 function extractMessageText(message) {
   if (!message) return ''
