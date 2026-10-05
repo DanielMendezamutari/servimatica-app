@@ -3,6 +3,7 @@ import makeWASocket, {
   useMultiFileAuthState,
   Browsers,
   fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore,
 } from '@whiskeysockets/baileys'
 import fs from 'fs'
 import path from 'path'
@@ -20,8 +21,9 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://servimatica.ribersoft.co
 
 let sock = null
 const logger = pino({ level: 'silent' })
+const msgStore = new Map()
 
-// Evitar que errores de cifrado interno de WhatsApp (como Bad MAC al enviarse entre dos apps del mismo celular) cierren el proceso
+// Evitar que errores no fatales cierren el proceso
 process.on('uncaughtException', err => {
   if (err?.message?.includes('Bad MAC')) return
   console.error('⚠️ Error no fatal:', err.message)
@@ -67,12 +69,17 @@ async function connectToWhatsApp() {
 
   sock = makeWASocket({
     version,
-    auth: state,
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger),
+    },
     logger,
     printQRInTerminal: false,
     browser: Browsers.macOS('Desktop'),
     syncFullHistory: false,
-    getMessage: async key => undefined,
+    getMessage: async key => {
+      return msgStore.get(key.id) || undefined
+    },
   })
 
   sock.ev.on('creds.update', saveCreds)
@@ -127,6 +134,14 @@ async function connectToWhatsApp() {
   // Escuchar mensajes entrantes (notify y append)
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
     for (const msg of messages) {
+      if (msg.key?.id && msg.message) {
+        msgStore.set(msg.key.id, msg.message)
+        if (msgStore.size > 500) {
+          const firstKey = msgStore.keys().next().value
+          msgStore.delete(firstKey)
+        }
+      }
+
       // Ignorar si no hay contenido de mensaje
       if (!msg.message) continue
 
