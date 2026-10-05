@@ -133,7 +133,12 @@ async function connectToWhatsApp() {
 
   // Escuchar mensajes entrantes (notify y append)
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    console.log(`\n⚡ [WhatsApp Event] Recibidos ${messages.length} mensaje(s) (tipo: ${type})`)
+
     for (const msg of messages) {
+      const remoteJid = msg.key?.remoteJid || ''
+      console.log(`   🔎 Remitente: ${remoteJid} | ¿De mí mismo?: ${msg.key?.fromMe ? 'SÍ' : 'NO'}`)
+
       if (msg.key?.id && msg.message) {
         msgStore.set(msg.key.id, msg.message)
         if (msgStore.size > 500) {
@@ -143,7 +148,10 @@ async function connectToWhatsApp() {
       }
 
       // Ignorar si no hay contenido de mensaje
-      if (!msg.message) continue
+      if (!msg.message) {
+        console.log('   ⚠️ Mensaje sin contenido de texto utilizable.')
+        continue
+      }
 
       // Ignorar mensajes enviados por nosotros mismos (evita bucles infinitos)
       if (msg.key.fromMe) {
