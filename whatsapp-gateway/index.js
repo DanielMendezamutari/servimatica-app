@@ -2,6 +2,7 @@ import makeWASocket, {
   DisconnectReason,
   useMultiFileAuthState,
   Browsers,
+  fetchLatestBaileysVersion,
 } from '@whiskeysockets/baileys'
 import fs from 'fs'
 import path from 'path'
@@ -44,12 +45,22 @@ function extractMessageText(message) {
 
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR)
+  
+  let version = [2, 3000, 1015901307]
+  try {
+    const latest = await fetchLatestBaileysVersion()
+    version = latest.version
+    console.log(`📡 Protocolo WhatsApp Web sincronizado: v${version.join('.')}`)
+  } catch (e) {
+    console.log(`ℹ️ Usando versión base de WhatsApp Web`)
+  }
 
   sock = makeWASocket({
+    version,
     auth: state,
     logger,
     printQRInTerminal: false,
-    browser: Browsers.ubuntu('Chrome'),
+    browser: Browsers.macOS('Desktop'),
     syncFullHistory: false,
     getMessage: async key => undefined,
   })
