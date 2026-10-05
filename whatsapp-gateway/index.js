@@ -20,7 +20,7 @@ const PUBLIC_QR_PATH = path.join(__dirname, '..', 'public', 'whatsapp_qr.png')
 const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://servimatica.ribersoft.com/api/webhooks/whatsapp'
 
 let sock = null
-const logger = pino({ level: 'silent' })
+const logger = pino({ level: 'warn' })
 const msgStore = new Map()
 
 // Evitar que errores no fatales cierren el proceso
@@ -133,7 +133,19 @@ async function connectToWhatsApp() {
 
   // Escuchar mensajes entrantes (notify y append)
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    console.log(`\n⚡ [UPSERT EVENT] ${messages.length} mensaje(s) de tipo "${type}"`)
+
     for (const msg of messages) {
+      const remoteJid = msg.key?.remoteJid || 'desconocido'
+      const isFromMe = msg.key?.fromMe ? true : false
+      const text = extractMessageText(msg.message)
+      const hasMsg = !!msg.message
+
+      console.log(`   📨 Remitente: ${remoteJid} | ¿De mí?: ${isFromMe ? 'SÍ' : 'NO'} | ¿Tiene msg?: ${hasMsg ? 'SÍ' : 'NO'} | Stub: ${msg.messageStubType || 'ninguno'}`)
+      if (text) {
+        console.log(`   📝 Texto extraído: "${text}"`)
+      }
+
       if (msg.key?.id && msg.message) {
         msgStore.set(msg.key.id, msg.message)
         if (msgStore.size > 500) {
@@ -144,18 +156,9 @@ async function connectToWhatsApp() {
 
       // Ignorar si no hay contenido de mensaje
       if (!msg.message) {
+        console.log('   ⚠️ Omitido: sin objeto message (paquete de señalización interna).')
         continue
       }
-
-      // Si es un paquete de protocolo puro sin texto de usuario
-      if (msg.message.protocolMessage && !extractMessageText(msg.message)) {
-        continue
-      }
-
-      const remoteJid = msg.key?.remoteJid || ''
-      const isFromMe = msg.key?.fromMe ? true : false
-
-      console.log(`\n🔔 [Mensaje entrante detectado] Remitente: ${remoteJid} | ¿Es de mí mismo?: ${isFromMe ? 'SÍ' : 'NO'}`)
 
       // Ignorar mensajes enviados por nosotros mismos (evita bucles infinitos)
       if (isFromMe) {
@@ -169,16 +172,13 @@ async function connectToWhatsApp() {
         continue
       }
 
-      const text = extractMessageText(msg.message)
-      console.log(`   📝 Texto extraído: "${text}"`)
-
       if (!text || text.trim() === '') {
-        console.log('   ⚠️ Texto vacío o tipo de mensaje no compatible.')
+        console.log('   ⚠️ Omitido: sin texto utilizable.')
         continue
       }
 
       const pushName = msg.pushName || 'Cliente'
-      console.log(`📩 Procesando consulta de ${pushName}: "${text}"`)
+      console.log(`\n🤖 Procesando consulta de ${pushName}: "${text}"`)
 
       try {
         console.log(`🌐 Consultando IA en el servidor Servimática...`)
