@@ -24,6 +24,8 @@ class ProductModel extends Model
         'defective_stock',
         'min_stock',
         'warranty_days',
+        'warranty_hardware_days',
+        'warranty_software_days',
         'status',
         'image_path',
         'gallery_images',
@@ -36,6 +38,8 @@ class ProductModel extends Model
         'defective_stock' => 0,
         'min_stock' => 0,
         'warranty_days' => 0,
+        'warranty_hardware_days' => 0,
+        'warranty_software_days' => 0,
     ];
 
     protected $hidden = [
@@ -51,9 +55,29 @@ class ProductModel extends Model
             'stock' => 'integer',
             'defective_stock' => 'integer',
             'warranty_days' => 'integer',
+            'warranty_hardware_days' => 'integer',
+            'warranty_software_days' => 'integer',
             'min_stock' => 'integer',
             'gallery_images' => 'array',
         ];
+    }
+
+    public function setWarrantyDaysAttribute($value): void
+    {
+        $days = (int) $value;
+        $this->attributes['warranty_days'] = $days;
+        if (!isset($this->attributes['warranty_hardware_days']) || $this->attributes['warranty_hardware_days'] === 0) {
+            $this->attributes['warranty_hardware_days'] = $days;
+        }
+    }
+
+    public function setWarrantyHardwareDaysAttribute($value): void
+    {
+        $days = (int) $value;
+        $this->attributes['warranty_hardware_days'] = $days;
+        if (!isset($this->attributes['warranty_days']) || $this->attributes['warranty_days'] === 0) {
+            $this->attributes['warranty_days'] = $days;
+        }
     }
 
     public function getImageUrlAttribute(): string

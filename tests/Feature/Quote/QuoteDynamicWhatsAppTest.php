@@ -113,4 +113,45 @@ class QuoteDynamicWhatsAppTest extends TestCase
         $this->assertStringNotContainsString("\u{FFFD}", $messageText);
         $this->assertStringNotContainsString("\u{FFFD}", $whatsappLink);
     }
+
+    public function test_whatsapp_message_formats_dual_autonomous_warranties_cleanly(): void
+    {
+        $this->seed();
+
+        $cat = CategoryModel::first();
+        $product = ProductModel::create([
+            'name' => 'Laptop HP Omen 16',
+            'category_id' => $cat->id,
+            'sku' => 'LAP-OMEN-16',
+            'cost_price' => 8000.00,
+            'sale_price' => 9980.00,
+            'stock' => 3,
+            'min_stock' => 1,
+            'warranty_hardware_days' => 730,
+            'warranty_software_days' => 90,
+            'status' => 'active',
+        ]);
+
+        $token = $this->postJson('/api/auth/login', ['login' => 'admin', 'pin' => '1234'])->json('accessToken');
+        $headers = ['Authorization' => "Bearer $token"];
+
+        $quoteRes = $this->postJson('/api/quotes', [
+            'client_name' => 'Cliente Dual',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'quantity' => 1,
+                    'unit_price' => 9980.00,
+                ],
+            ],
+        ], $headers)->assertCreated();
+
+        $quoteId = $quoteRes->json('data.id');
+        $res = $this->getJson("/api/quotes/{$quoteId}/whatsapp-link", $headers)->assertOk();
+        $messageText = $res->json('message_text');
+
+        $this->assertStringContainsString('HW: 24 meses (2 años) | Software: 3 meses', $messageText);
+        $this->assertStringNotContainsString("\u{FFFD}", $messageText);
+    }
 }

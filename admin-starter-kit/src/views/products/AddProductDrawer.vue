@@ -31,6 +31,8 @@ const form = ref({
   stock: 0,
   minStock: 0,
   warrantyDays: 0,
+  warrantyHardwareDays: 0,
+  warrantySoftwareDays: 0,
 })
 
 const warrantyPresets = [
@@ -44,11 +46,19 @@ const warrantyPresets = [
   { title: 'Personalizado...', value: 'custom' },
 ]
 
-const selectedWarrantyPreset = ref(0)
+const selectedHardwarePreset = ref(0)
+const selectedSoftwarePreset = ref(0)
 
-function onWarrantyPresetChange(val) {
+function onHardwarePresetChange(val) {
   if (val !== 'custom') {
+    form.value.warrantyHardwareDays = Number(val)
     form.value.warrantyDays = Number(val)
+  }
+}
+
+function onSoftwarePresetChange(val) {
+  if (val !== 'custom') {
+    form.value.warrantySoftwareDays = Number(val)
   }
 }
 
@@ -252,8 +262,11 @@ watch(() => props.isDrawerOpen, async open => {
   await Promise.all([fetchCategories(), fetchBrands()])
   
   if (props.product) {
-    const days = Number(props.product.warranty_days ?? props.product.warrantyDays ?? 0)
-    selectedWarrantyPreset.value = [0, 15, 30, 90, 180, 365, 730].includes(days) ? days : 'custom'
+    const hwDays = Number(props.product.warranty_hardware_days ?? props.product.warrantyHardwareDays ?? props.product.warranty_days ?? props.product.warrantyDays ?? 0)
+    const swDays = Number(props.product.warranty_software_days ?? props.product.warrantySoftwareDays ?? 0)
+
+    selectedHardwarePreset.value = [0, 15, 30, 90, 180, 365, 730].includes(hwDays) ? hwDays : 'custom'
+    selectedSoftwarePreset.value = [0, 15, 30, 90, 180, 365, 730].includes(swDays) ? swDays : 'custom'
 
     coverPreview.value = props.product.imageUrl || props.product.image_url || null
     coverFile.value = null
@@ -278,7 +291,9 @@ watch(() => props.isDrawerOpen, async open => {
       salePrice: props.product.salePrice ?? '',
       stock: props.product.stock ?? 0,
       minStock: props.product.minStock ?? 0,
-      warrantyDays: days,
+      warrantyDays: hwDays,
+      warrantyHardwareDays: hwDays,
+      warrantySoftwareDays: swDays,
     }
 
     if (props.product.categoryId) {
@@ -288,7 +303,8 @@ watch(() => props.isDrawerOpen, async open => {
       await loadModels(props.product.brandId)
     }
   } else {
-    selectedWarrantyPreset.value = 0
+    selectedHardwarePreset.value = 0
+    selectedSoftwarePreset.value = 0
     coverPreview.value = null
     coverFile.value = null
     removeCover.value = false
@@ -311,6 +327,8 @@ watch(() => props.isDrawerOpen, async open => {
       stock: 0,
       minStock: 0,
       warrantyDays: 0,
+      warrantyHardwareDays: 0,
+      warrantySoftwareDays: 0,
     }
     if (form.value.categoryId) {
       await loadSubfamilies(form.value.categoryId)
@@ -373,7 +391,11 @@ async function save() {
   formData.append('costPrice', parseFloat(form.value.costPrice) || 0)
   formData.append('salePrice', parseFloat(form.value.salePrice) || 0)
   formData.append('minStock', parseInt(form.value.minStock, 10) || 0)
-  formData.append('warrantyDays', parseInt(form.value.warrantyDays, 10) || 0)
+  const hwDays = parseInt(form.value.warrantyHardwareDays, 10) || parseInt(form.value.warrantyDays, 10) || 0
+  const swDays = parseInt(form.value.warrantySoftwareDays, 10) || 0
+  formData.append('warrantyDays', hwDays)
+  formData.append('warrantyHardwareDays', hwDays)
+  formData.append('warrantySoftwareDays', swDays)
 
   if (form.value.sku && form.value.sku.trim()) {
     formData.append('sku', form.value.sku.trim())
@@ -654,29 +676,65 @@ async function save() {
                 />
               </VCol>
 
-              <!-- Garantía Técnica -->
+              <!-- 1. Garantía de Hardware (Física) -->
               <VCol
                 cols="12"
-                :sm="selectedWarrantyPreset === 'custom' ? 6 : 12"
+                :sm="selectedHardwarePreset === 'custom' ? 6 : 12"
               >
                 <VSelect
-                  v-model="selectedWarrantyPreset"
+                  v-model="selectedHardwarePreset"
                   :items="warrantyPresets"
-                  label="Garantía técnica *"
-                  prepend-inner-icon="ri-shield-check-line"
+                  label="Garantía de Hardware (Física) *"
+                  prepend-inner-icon="ri-shield-keyhole-line"
                   :disabled="busy"
-                  @update:model-value="onWarrantyPresetChange"
+                  hint="Cubre fallas de fábrica y componentes físicos"
+                  persistent-hint
+                  @update:model-value="onHardwarePresetChange"
                 />
               </VCol>
 
               <VCol
-                v-if="selectedWarrantyPreset === 'custom'"
+                v-if="selectedHardwarePreset === 'custom'"
                 cols="12"
                 sm="6"
               >
                 <VTextField
-                  v-model.number="form.warrantyDays"
-                  label="Días de garantía personalizados *"
+                  v-model.number="form.warrantyHardwareDays"
+                  label="Días Hardware personalizados *"
+                  type="number"
+                  min="0"
+                  suffix="días"
+                  :rules="[positiveNumber]"
+                  :disabled="busy"
+                  @update:model-value="val => form.warrantyDays = Number(val)"
+                />
+              </VCol>
+
+              <!-- 2. Garantía de Software (Soporte Lógico) -->
+              <VCol
+                cols="12"
+                :sm="selectedSoftwarePreset === 'custom' ? 6 : 12"
+              >
+                <VSelect
+                  v-model="selectedSoftwarePreset"
+                  :items="warrantyPresets"
+                  label="Garantía de Software (Soporte Lógico) *"
+                  prepend-inner-icon="ri-computer-line"
+                  :disabled="busy"
+                  hint="Cubre sistema operativo, drivers y configuración"
+                  persistent-hint
+                  @update:model-value="onSoftwarePresetChange"
+                />
+              </VCol>
+
+              <VCol
+                v-if="selectedSoftwarePreset === 'custom'"
+                cols="12"
+                sm="6"
+              >
+                <VTextField
+                  v-model.number="form.warrantySoftwareDays"
+                  label="Días Software personalizados *"
                   type="number"
                   min="0"
                   suffix="días"

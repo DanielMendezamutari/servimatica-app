@@ -27,20 +27,34 @@ final readonly class CheckSaleWarrantyUseCase
             $returnedQty = (int) SaleReturnItemModel::where('sale_item_id', $item->id)->sum('quantity');
             $remainingQty = max(0, $item->quantity - $returnedQty);
 
-            $isValid = false;
-            $daysRemaining = 0;
-
-            if ($item->warrantyExpiresAt !== null) {
-                $expiry = Carbon::parse($item->warrantyExpiresAt)->endOfDay();
+            // 1. Evaluación Hardware
+            $isHwValid = false;
+            $hwDaysRemaining = 0;
+            $hwExpiryStr = $item->warrantyHardwareExpiresAt ?: $item->warrantyExpiresAt;
+            if (!empty($hwExpiryStr)) {
+                $expiry = Carbon::parse($hwExpiryStr)->endOfDay();
                 $now = Carbon::now();
                 if ($now->lessThanOrEqualTo($expiry)) {
-                    $isValid = true;
-                    $daysRemaining = (int) ceil($now->floatDiffInDays($expiry, false));
-                } else {
-                    $isValid = false;
-                    $daysRemaining = 0;
+                    $isHwValid = true;
+                    $hwDaysRemaining = (int) ceil($now->floatDiffInDays($expiry, false));
                 }
             }
+            $hwDays = $item->warrantyHardwareDays ?: $item->warrantyDays;
+            $hwStatus = $hwDays > 0 ? ($isHwValid ? 'active' : 'expired') : 'none';
+
+            // 2. Evaluación Software
+            $isSwValid = false;
+            $swDaysRemaining = 0;
+            if (!empty($item->warrantySoftwareExpiresAt)) {
+                $expiry = Carbon::parse($item->warrantySoftwareExpiresAt)->endOfDay();
+                $now = Carbon::now();
+                if ($now->lessThanOrEqualTo($expiry)) {
+                    $isSwValid = true;
+                    $swDaysRemaining = (int) ceil($now->floatDiffInDays($expiry, false));
+                }
+            }
+            $swDays = $item->warrantySoftwareDays;
+            $swStatus = $swDays > 0 ? ($isSwValid ? 'active' : 'expired') : 'none';
 
             $itemsSummary[] = [
                 'sale_item_id' => $item->id,
@@ -50,11 +64,23 @@ final readonly class CheckSaleWarrantyUseCase
                 'returned_quantity' => $returnedQty,
                 'remaining_quantity' => $remainingQty,
                 'unit_price' => $item->unitPrice,
-                'warranty_days' => $item->warrantyDays,
-                'warranty_expires_at' => $item->warrantyExpiresAt,
-                'is_warranty_valid' => $isValid,
-                'days_remaining' => $daysRemaining,
+                // Retrocompatibilidad con vistas legacy
+                'warranty_days' => $hwDays,
+                'warranty_expires_at' => $hwExpiryStr,
+                'is_warranty_valid' => $isHwValid,
+                'days_remaining' => $hwDaysRemaining,
                 'serial_number' => $item->serialNumber,
+                // Nuevos campos duales autónomos
+                'warranty_hardware_days' => $hwDays,
+                'warranty_hardware_expires_at' => $hwExpiryStr,
+                'is_hardware_warranty_valid' => $isHwValid,
+                'hardware_days_remaining' => $hwDaysRemaining,
+                'hardware_status' => $hwStatus,
+                'warranty_software_days' => $swDays,
+                'warranty_software_expires_at' => $item->warrantySoftwareExpiresAt,
+                'is_software_warranty_valid' => $isSwValid,
+                'software_days_remaining' => $swDaysRemaining,
+                'software_status' => $swStatus,
             ];
         }
 

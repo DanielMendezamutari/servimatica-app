@@ -38,6 +38,10 @@ class EloquentSaleRepository implements SaleRepositoryInterface
                     'subtotal' => $it['subtotal'] ?? ($it['quantity'] * $it['unit_price']),
                     'warranty_days' => $it['warranty_days'] ?? 0,
                     'warranty_expires_at' => $it['warranty_expires_at'] ?? null,
+                    'warranty_hardware_days' => $it['warranty_hardware_days'] ?? ($it['warranty_days'] ?? 0),
+                    'warranty_hardware_expires_at' => $it['warranty_hardware_expires_at'] ?? ($it['warranty_expires_at'] ?? null),
+                    'warranty_software_days' => $it['warranty_software_days'] ?? 0,
+                    'warranty_software_expires_at' => $it['warranty_software_expires_at'] ?? null,
                     'serial_number' => $it['serial_number'] ?? null,
                 ]);
             }
@@ -155,6 +159,14 @@ class EloquentSaleRepository implements SaleRepositoryInterface
     private function toDomain(SaleModel $m): Sale
     {
         $items = $m->items->map(function ($it) {
+            $hwDays = (int) ($it->warranty_hardware_days ?? $it->warranty_days ?? 0);
+            $hwExpires = $it->warranty_hardware_expires_at ?? $it->warranty_expires_at;
+            $hwExpiresFormatted = $hwExpires ? (is_string($hwExpires) ? $hwExpires : $hwExpires->format('Y-m-d')) : null;
+
+            $swDays = (int) ($it->warranty_software_days ?? 0);
+            $swExpires = $it->warranty_software_expires_at;
+            $swExpiresFormatted = $swExpires ? (is_string($swExpires) ? $swExpires : $swExpires->format('Y-m-d')) : null;
+
             return new SaleItem(
                 id: $it->id,
                 saleId: $it->sale_id,
@@ -165,9 +177,13 @@ class EloquentSaleRepository implements SaleRepositoryInterface
                 unitCost: (float) $it->unit_cost,
                 unitPrice: (float) $it->unit_price,
                 subtotal: (float) $it->subtotal,
-                warrantyDays: (int) ($it->warranty_days ?? 0),
-                warrantyExpiresAt: $it->warranty_expires_at ? (is_string($it->warranty_expires_at) ? $it->warranty_expires_at : $it->warranty_expires_at->format('Y-m-d')) : null,
-                serialNumber: $it->serial_number
+                warrantyDays: $hwDays,
+                warrantyExpiresAt: $hwExpiresFormatted,
+                serialNumber: $it->serial_number,
+                warrantyHardwareDays: $hwDays,
+                warrantyHardwareExpiresAt: $hwExpiresFormatted,
+                warrantySoftwareDays: $swDays,
+                warrantySoftwareExpiresAt: $swExpiresFormatted
             );
         })->all();
 

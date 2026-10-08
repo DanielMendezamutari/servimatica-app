@@ -85,6 +85,18 @@ function formatWarrantyLabel(days) {
   return `${d} días`
 }
 
+function formatShortWarranty(days) {
+  const d = Number(days ?? 0)
+  if (d <= 0) return '0d'
+  if (d === 15) return '15d'
+  if (d === 30) return '1m'
+  if (d === 90) return '3m'
+  if (d === 180) return '6m'
+  if (d === 365) return '1a'
+  if (d === 730) return '2a'
+  return `${d}d`
+}
+
 function conditionColor(cond) {
   switch (cond) {
     case 'nuevo': return 'success'
@@ -673,10 +685,40 @@ onMounted(async () => {
           </VChip>
         </template>
 
-        <!-- Garantía Técnica -->
+        <!-- Garantía Técnica Dual (Hardware y Software) -->
         <template #item.warrantyDays="{ item }">
-          <span class="text-body-2 text-medium-emphasis">
-            {{ formatWarrantyLabel(item.warrantyDays ?? item.warranty_days) }}
+          <div
+            v-if="(Number(item.warrantyHardwareDays ?? item.warranty_hardware_days ?? item.warrantyDays ?? item.warranty_days ?? 0) > 0) || (Number(item.warrantySoftwareDays ?? item.warranty_software_days ?? 0) > 0)"
+            class="d-flex flex-column align-center gap-1 py-1"
+          >
+            <VChip
+              v-if="Number(item.warrantyHardwareDays ?? item.warranty_hardware_days ?? item.warrantyDays ?? item.warranty_days ?? 0) > 0"
+              size="x-small"
+              color="primary"
+              variant="tonal"
+              class="font-weight-bold"
+              prepend-icon="ri-shield-keyhole-line"
+              title="Garantía de Hardware (Física)"
+            >
+              HW: {{ formatShortWarranty(item.warrantyHardwareDays ?? item.warranty_hardware_days ?? item.warrantyDays ?? item.warranty_days) }}
+            </VChip>
+            <VChip
+              v-if="Number(item.warrantySoftwareDays ?? item.warranty_software_days ?? 0) > 0"
+              size="x-small"
+              color="info"
+              variant="tonal"
+              class="font-weight-bold"
+              prepend-icon="ri-computer-line"
+              title="Garantía de Software (Soporte Lógico)"
+            >
+              SW: {{ formatShortWarranty(item.warrantySoftwareDays ?? item.warranty_software_days) }}
+            </VChip>
+          </div>
+          <span
+            v-else
+            class="text-caption text-disabled"
+          >
+            Sin garantía
           </span>
         </template>
 

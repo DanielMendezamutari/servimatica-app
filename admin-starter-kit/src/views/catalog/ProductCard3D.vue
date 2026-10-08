@@ -92,13 +92,13 @@ const cardStyle = computed(() => {
   }
 })
 
-function formatWarranty(days) {
+function formatShortWarranty(days) {
   const d = Number(days || 0)
-  if (d <= 0) return 'Garantía tienda'
-  if (d === 365) return 'Garantía 1 año'
-  if (d === 730) return 'Garantía 2 años'
-  if (d % 30 === 0) return `Garantía ${d / 30}m`
-  return `Garantía ${d}d`
+  if (d <= 0) return '0d'
+  if (d === 365) return '1a'
+  if (d === 730) return '2a'
+  if (d % 30 === 0) return `${d / 30}m`
+  return `${d}d`
 }
 
 function conditionLabel(cond) {
@@ -203,13 +203,34 @@ function conditionLabel(cond) {
         />
 
         <!-- Garantía y Stock sin truncamiento -->
-        <div class="d-flex align-center gap-2 mb-4 flex-wrap">
-          <span class="badge-pill badge-warranty d-inline-flex align-center gap-1">
+        <div class="d-flex align-center gap-1.5 mb-4 flex-wrap">
+          <span
+            v-if="(product.warranty_hardware_days ?? product.warranty_days) > 0"
+            class="badge-pill badge-warranty d-inline-flex align-center gap-1"
+            title="Garantía de Hardware"
+          >
             <VIcon
               icon="ri-shield-check-line"
               size="13"
             />
-            {{ formatWarranty(product.warranty_days) }}
+            HW: {{ formatShortWarranty(product.warranty_hardware_days ?? product.warranty_days) }}
+          </span>
+          <span
+            v-if="product.warranty_software_days > 0"
+            class="badge-pill badge-software d-inline-flex align-center gap-1"
+            title="Garantía de Software"
+          >
+            <VIcon
+              icon="ri-code-box-line"
+              size="13"
+            />
+            SW: {{ formatShortWarranty(product.warranty_software_days) }}
+          </span>
+          <span
+            v-if="!(product.warranty_hardware_days ?? product.warranty_days) && !product.warranty_software_days"
+            class="badge-pill badge-stock text-disabled"
+          >
+            Sin garantía
           </span>
           <span class="badge-pill badge-stock">
             Stock: {{ product.stock }}
@@ -348,6 +369,12 @@ function conditionLabel(cond) {
 .badge-warranty {
   background: #ecfdf5;
   color: #065f46;
+}
+
+.badge-software {
+  background: rgba(14, 165, 233, 0.12);
+  color: #0284c7;
+  border: 1px solid rgba(14, 165, 233, 0.25);
 }
 
 .badge-stock {

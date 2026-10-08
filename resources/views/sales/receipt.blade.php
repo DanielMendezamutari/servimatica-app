@@ -137,8 +137,11 @@
                     @if(!empty($it->serialNumber))
                         <div style="font-size: 8.5px; color: #222; font-weight: bold;">S/N: {{ $it->serialNumber }}</div>
                     @endif
-                    @if($it->warrantyDays > 0)
-                        <div style="font-size: 8.5px; color: #333;">🛡️ Garantía: {{ $it->warrantyDays }} días (Vence: {{ $it->warrantyExpiresAt ? date('d/m/Y', strtotime($it->warrantyExpiresAt)) : 'N/A' }})</div>
+                    @if(($it->warrantyHardwareDays ?? $it->warrantyDays) > 0)
+                        <div style="font-size: 8.5px; color: #333;">🛡️ G. Hardware: {{ $it->warrantyHardwareDays ?? $it->warrantyDays }} días (Vence: {{ ($it->warrantyHardwareExpiresAt ?? $it->warrantyExpiresAt) ? date('d/m/Y', strtotime($it->warrantyHardwareExpiresAt ?? $it->warrantyExpiresAt)) : 'N/A' }})</div>
+                    @endif
+                    @if(($it->warrantySoftwareDays ?? 0) > 0)
+                        <div style="font-size: 8.5px; color: #333;">💻 G. Software: {{ $it->warrantySoftwareDays }} días (Vence: {{ $it->warrantySoftwareExpiresAt ? date('d/m/Y', strtotime($it->warrantySoftwareExpiresAt)) : 'N/A' }})</div>
                     @endif
                 </td>
                 <td class="text-right font-bold">Bs. {{ number_format($it->subtotal, 2, '.', '') }}</td>

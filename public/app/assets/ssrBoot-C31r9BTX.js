@@ -1,0 +1,1 @@
+import{ag as t,G as e,i as s,cj as n}from"./index-BdcBi80Z.js";function i(){const o=t(!1);return e(()=>{window.requestAnimationFrame(()=>{o.value=!0})}),{ssrBootStyles:s(()=>o.value?void 0:{transition:"none !important"}),isBooted:n(o)}}export{i as u};

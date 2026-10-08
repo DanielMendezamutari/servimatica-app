@@ -67,6 +67,8 @@ final class SaleController
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
             'items.*.warranty_days' => ['nullable', 'integer', 'min:0'],
+            'items.*.warranty_hardware_days' => ['nullable', 'integer', 'min:0'],
+            'items.*.warranty_software_days' => ['nullable', 'integer', 'min:0'],
             'items.*.serial_number' => ['nullable', 'string', 'max:100'],
         ], [
             'cash_shift_id.required' => 'El turno de caja es obligatorio para procesar la venta.',

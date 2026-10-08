@@ -79,7 +79,9 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             'cost_price' => (new Price($data['costPrice'] ?? $data['cost_price'] ?? 0))->value,
             'sale_price' => (new Price($data['salePrice'] ?? $data['sale_price']))->value,
             'min_stock' => (new StockQuantity((int)($data['minStock'] ?? $data['min_stock'] ?? 0)))->value,
-            'warranty_days' => max(0, (int)($data['warrantyDays'] ?? $data['warranty_days'] ?? 0)),
+            'warranty_days' => max(0, (int)($data['warrantyHardwareDays'] ?? $data['warranty_hardware_days'] ?? $data['warrantyDays'] ?? $data['warranty_days'] ?? 0)),
+            'warranty_hardware_days' => max(0, (int)($data['warrantyHardwareDays'] ?? $data['warranty_hardware_days'] ?? $data['warrantyDays'] ?? $data['warranty_days'] ?? 0)),
+            'warranty_software_days' => max(0, (int)($data['warrantySoftwareDays'] ?? $data['warranty_software_days'] ?? 0)),
         ];
 
         if (isset($data['status'])) {
@@ -186,7 +188,9 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             productModelName: $m->model?->name,
             condition: $m->condition ?? 'nuevo',
             createdAt: $m->created_at?->toISOString(),
-            warrantyDays: (int)($m->warranty_days ?? 0),
+            warrantyDays: (int)($m->warranty_hardware_days ?? $m->warranty_days ?? 0),
+            warrantyHardwareDays: (int)($m->warranty_hardware_days ?? $m->warranty_days ?? 0),
+            warrantySoftwareDays: (int)($m->warranty_software_days ?? 0),
             defectiveStock: (int)($m->defective_stock ?? 0),
             imagePath: $m->image_path,
             galleryImages: is_array($m->gallery_images) ? $m->gallery_images : null,

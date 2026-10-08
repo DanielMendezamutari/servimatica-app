@@ -183,6 +183,8 @@ class DemoStoreSeeder extends Seeder
             unset($p['brand']);
             $brand = $brandName ? BrandModel::where('name', $brandName)->first() : null;
             $p['brand_id'] = $brand?->id;
+            $p['warranty_hardware_days'] = $p['warranty_days'] ?? 0;
+            $p['warranty_software_days'] = ($p['sku'] === 'SRV-MAN-001') ? 30 : 0;
 
             ProductModel::updateOrCreate(
                 ['sku' => $p['sku']],

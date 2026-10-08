@@ -49,7 +49,7 @@ function close() {
 <template>
   <VDialog
     :model-value="props.isDialogOpen"
-    max-width="750px"
+    max-width="880px"
     @update:model-value="close"
   >
     <VCard>
@@ -102,15 +102,15 @@ function close() {
             </div>
           </div>
 
-          <!-- Tabla de Artículos y Cobertura -->
+          <!-- Tabla de Artículos y Cobertura Autónoma -->
           <VTable density="compact" hover class="border rounded">
             <thead>
               <tr>
                 <th class="font-weight-bold">Producto</th>
                 <th class="font-weight-bold">S/N Serie</th>
                 <th class="font-weight-bold text-center">Cant.</th>
-                <th class="font-weight-bold text-center">Garantía</th>
-                <th class="font-weight-bold text-center">Estado</th>
+                <th class="font-weight-bold text-center">🛡️ G. Hardware</th>
+                <th class="font-weight-bold text-center">💻 G. Software</th>
               </tr>
             </thead>
             <tbody>
@@ -133,43 +133,67 @@ function close() {
                     ({{ it.returned_quantity }} dev.)
                   </div>
                 </td>
-                <td class="text-center">
-                  <div v-if="it.warranty_days > 0">
-                    <span class="font-weight-bold">{{ it.warranty_days }} días</span>
-                    <div class="text-caption text-disabled">Vence: {{ it.warranty_expires_at }}</div>
-                  </div>
-                  <div v-else class="text-caption text-disabled">
-                    Sin garantía
-                  </div>
+                <!-- Garantía de Hardware -->
+                <td class="text-center py-2">
+                  <template v-if="(it.warranty_hardware_days ?? it.warranty_days) > 0">
+                    <div class="mb-1">
+                      <VChip
+                        v-if="it.hardware_status === 'valid' || (it.is_hardware_warranty_valid ?? it.is_warranty_valid)"
+                        color="success"
+                        size="small"
+                        label
+                        class="font-weight-bold"
+                      >
+                        Vigente ({{ it.hardware_days_remaining ?? it.days_remaining }}d)
+                      </VChip>
+                      <VChip
+                        v-else
+                        color="error"
+                        size="small"
+                        label
+                        class="font-weight-bold"
+                      >
+                        Expirada
+                      </VChip>
+                    </div>
+                    <div class="text-caption text-medium-emphasis" style="font-size: 11px;">
+                      {{ it.warranty_hardware_days ?? it.warranty_days }}d • Vence: {{ it.warranty_hardware_expires_at ?? it.warranty_expires_at }}
+                    </div>
+                  </template>
+                  <span v-else class="text-caption text-disabled">
+                    Sin garantía (0d)
+                  </span>
                 </td>
-                <td class="text-center">
-                  <VChip
-                    v-if="it.warranty_days > 0 && it.is_warranty_valid"
-                    color="success"
-                    size="small"
-                    label
-                    class="font-weight-bold"
-                  >
-                    Vigente ({{ it.days_remaining }}d)
-                  </VChip>
-                  <VChip
-                    v-else-if="it.warranty_days > 0 && !it.is_warranty_valid"
-                    color="error"
-                    size="small"
-                    label
-                    class="font-weight-bold"
-                  >
-                    Expirada
-                  </VChip>
-                  <VChip
-                    v-else
-                    color="secondary"
-                    size="small"
-                    variant="tonal"
-                    label
-                  >
-                    N/A
-                  </VChip>
+                <!-- Garantía de Software -->
+                <td class="text-center py-2">
+                  <template v-if="it.warranty_software_days > 0">
+                    <div class="mb-1">
+                      <VChip
+                        v-if="it.software_status === 'valid' || it.is_software_warranty_valid"
+                        color="info"
+                        size="small"
+                        label
+                        class="font-weight-bold"
+                      >
+                        Vigente ({{ it.software_days_remaining }}d)
+                      </VChip>
+                      <VChip
+                        v-else
+                        color="error"
+                        size="small"
+                        label
+                        class="font-weight-bold"
+                      >
+                        Expirada
+                      </VChip>
+                    </div>
+                    <div class="text-caption text-medium-emphasis" style="font-size: 11px;">
+                      {{ it.warranty_software_days }}d • Vence: {{ it.warranty_software_expires_at }}
+                    </div>
+                  </template>
+                  <span v-else class="text-caption text-disabled">
+                    Sin soporte (0d)
+                  </span>
                 </td>
               </tr>
             </tbody>

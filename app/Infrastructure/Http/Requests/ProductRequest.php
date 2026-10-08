@@ -13,6 +13,9 @@ class ProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $hwDays = $this->input('warrantyHardwareDays') ?? $this->input('warranty_hardware_days') ?? $this->input('warrantyDays') ?? $this->input('warranty_days', 0);
+        $swDays = $this->input('warrantySoftwareDays') ?? $this->input('warranty_software_days', 0);
+
         $this->merge([
             'categoryId' => $this->input('categoryId') ?? $this->input('category_id'),
             'subfamilyId' => $this->input('subfamilyId') ?? $this->input('subfamily_id'),
@@ -22,7 +25,11 @@ class ProductRequest extends FormRequest
             'salePrice' => $this->input('salePrice') ?? $this->input('sale_price'),
             'minStock' => $this->input('minStock') ?? $this->input('min_stock', 0),
             'condition' => $this->input('condition') ?: 'nuevo',
-            'warrantyDays' => $this->input('warrantyDays') ?? $this->input('warranty_days', 0),
+            'warrantyDays' => $hwDays,
+            'warrantyHardwareDays' => $hwDays,
+            'warranty_hardware_days' => $hwDays,
+            'warrantySoftwareDays' => $swDays,
+            'warranty_software_days' => $swDays,
         ]);
     }
 
@@ -43,6 +50,10 @@ class ProductRequest extends FormRequest
             'minStock' => ['nullable', 'integer', 'min:0'],
             'warrantyDays' => ['nullable', 'integer', 'min:0'],
             'warranty_days' => ['nullable', 'integer', 'min:0'],
+            'warrantyHardwareDays' => ['nullable', 'integer', 'min:0'],
+            'warranty_hardware_days' => ['nullable', 'integer', 'min:0'],
+            'warrantySoftwareDays' => ['nullable', 'integer', 'min:0'],
+            'warranty_software_days' => ['nullable', 'integer', 'min:0'],
             'image' => ['nullable', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
             'gallery' => ['nullable', 'array', 'max:8'],
             'gallery.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],

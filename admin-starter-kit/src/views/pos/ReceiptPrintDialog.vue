@@ -112,9 +112,12 @@ function handleNewSale() {
               <span class="font-weight-medium">{{ it.quantity }}x {{ it.product_name }}</span>
               <span class="font-weight-bold">Bs. {{ it.subtotal }}</span>
             </div>
-            <div v-if="it.serial_number || it.warranty_days > 0" class="text-caption text-medium-emphasis ps-1" style="font-size: 10px;">
-              <div v-if="it.warranty_days > 0">
-                🛡️ Garantía: {{ it.warranty_days }} días (Vence: {{ formatWarrantyExpiry(it.warranty_expires_at, sale?.created_at, it.warranty_days) }})
+            <div v-if="it.serial_number || (it.warranty_hardware_days ?? it.warranty_days) > 0 || it.warranty_software_days > 0" class="text-caption text-medium-emphasis ps-1" style="font-size: 10px;">
+              <div v-if="(it.warranty_hardware_days ?? it.warranty_days) > 0">
+                🛡️ G. Hardware: {{ it.warranty_hardware_days ?? it.warranty_days }} días (Vence: {{ formatWarrantyExpiry(it.warranty_hardware_expires_at ?? it.warranty_expires_at, sale?.created_at, it.warranty_hardware_days ?? it.warranty_days) }})
+              </div>
+              <div v-if="it.warranty_software_days > 0">
+                💻 G. Software: {{ it.warranty_software_days }} días (Vence: {{ formatWarrantyExpiry(it.warranty_software_expires_at, sale?.created_at, it.warranty_software_days) }})
               </div>
               <div v-if="it.serial_number" class="font-mono text-high-emphasis font-weight-medium">
                 S/N: {{ it.serial_number }}

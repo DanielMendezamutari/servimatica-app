@@ -110,8 +110,22 @@ final readonly class ProcessSaleUseCase
                 $itemSubtotal = $qty * $unitPrice;
                 $subtotal += $itemSubtotal;
 
-                $warrantyDays = isset($it['warranty_days']) ? (int) $it['warranty_days'] : (int) ($product->warranty_days ?? 0);
-                $warrantyExpiresAt = $warrantyDays > 0 ? now()->addDays($warrantyDays)->format('Y-m-d H:i:s') : null;
+                if (isset($it['warranty_hardware_days'])) {
+                    $hwDays = (int) $it['warranty_hardware_days'];
+                } elseif (isset($it['warranty_days'])) {
+                    $hwDays = (int) $it['warranty_days'];
+                } else {
+                    $hwDays = (int) ($product->warranty_hardware_days ?: ($product->warranty_days ?: 0));
+                }
+
+                $hwExpiresAt = $hwDays > 0 ? now()->addDays($hwDays)->format('Y-m-d H:i:s') : null;
+
+                $swDays = isset($it['warranty_software_days'])
+                    ? (int) $it['warranty_software_days']
+                    : (int) ($product->warranty_software_days ?? 0);
+
+                $swExpiresAt = $swDays > 0 ? now()->addDays($swDays)->format('Y-m-d H:i:s') : null;
+
                 $serialNumber = !empty($it['serial_number']) ? trim($it['serial_number']) : null;
 
                 $itemsData[] = [
@@ -122,8 +136,12 @@ final readonly class ProcessSaleUseCase
                     'unit_cost' => (float) $product->cost_price, // Preservado confidencialmente
                     'unit_price' => $unitPrice,
                     'subtotal' => $itemSubtotal,
-                    'warranty_days' => $warrantyDays,
-                    'warranty_expires_at' => $warrantyExpiresAt,
+                    'warranty_days' => $hwDays,
+                    'warranty_expires_at' => $hwExpiresAt,
+                    'warranty_hardware_days' => $hwDays,
+                    'warranty_hardware_expires_at' => $hwExpiresAt,
+                    'warranty_software_days' => $swDays,
+                    'warranty_software_expires_at' => $swExpiresAt,
                     'serial_number' => $serialNumber,
                 ];
             }

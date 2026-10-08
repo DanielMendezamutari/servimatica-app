@@ -239,6 +239,8 @@ class LaptopTiersCatalogSeeder extends Seeder
             $brandName = $data['brand'];
             unset($data['brand']);
             $data['brand_id'] = $brands[$brandName]->id;
+            $data['warranty_hardware_days'] = $data['warranty_days'] ?? 365;
+            $data['warranty_software_days'] = 90;
 
             ProductModel::updateOrCreate(
                 ['sku' => $data['sku']],

@@ -21,6 +21,10 @@ class SaleItemModel extends Model
         'subtotal',
         'warranty_days',
         'warranty_expires_at',
+        'warranty_hardware_days',
+        'warranty_hardware_expires_at',
+        'warranty_software_days',
+        'warranty_software_expires_at',
         'serial_number',
     ];
 
@@ -31,6 +35,10 @@ class SaleItemModel extends Model
         'subtotal' => 'decimal:2',
         'warranty_days' => 'integer',
         'warranty_expires_at' => 'date',
+        'warranty_hardware_days' => 'integer',
+        'warranty_hardware_expires_at' => 'date',
+        'warranty_software_days' => 'integer',
+        'warranty_software_expires_at' => 'date',
     ];
 
     public function sale(): BelongsTo

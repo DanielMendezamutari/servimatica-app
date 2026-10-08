@@ -18,11 +18,13 @@ final class WhatsAppQuoteService
         $city = $company?->city ? trim(explode(',', $company->city)[0]) : 'Trinidad';
         $address = $company?->address ? trim($company->address) : '';
 
-        // 2. Obtener garantías de los productos
+        // 2. Obtener garantías de los productos (soporte autónomo Hardware y Software)
         $productIds = array_map(fn($item) => $item->productId, $quote->items);
-        $warranties = !empty($productIds)
-            ? ProductModel::whereIn('id', $productIds)->pluck('warranty_days', 'id')->toArray()
-            : [];
+        $products = !empty($productIds)
+            ? ProductModel::whereIn('id', $productIds)
+                ->get(['id', 'warranty_days', 'warranty_hardware_days', 'warranty_software_days'])
+                ->keyBy('id')
+            : collect();
 
         // 3. Obtener métodos de pago activos
         $paymentMethods = PaymentMethodModel::where('is_active', true)
@@ -33,7 +35,7 @@ final class WhatsAppQuoteService
         $hasQr = $paymentMethods->contains(fn($p) => $p->type === 'qr' || stripos($p->name, 'qr') !== false);
         $bankNames = $paymentMethods->filter(fn($p) => !empty($p->bank_name))->pluck('bank_name')->unique()->values()->all();
 
-        // 4. Construcción del mensaje comercial conciso y de alto impacto (Menos es más)
+        // 4. Construcción del mensaje comercial sobrio y profesional (Menos es más, cero emojis corruptibles)
         $lines = [];
         $header = "*" . mb_strtoupper($tradeName, 'UTF-8') . "*";
         if (!empty($slogan)) {
@@ -41,21 +43,23 @@ final class WhatsAppQuoteService
         }
         $lines[] = $header;
         $lines[] = "";
-        $lines[] = "¡Hola, *" . trim($quote->clientName) . "*! 👋 Qué gusto saludarle de parte de *" . $tradeName . "*. Le compartimos su cotización:";
+        $lines[] = "¡Hola, *" . trim($quote->clientName) . "*! Qué gusto saludarle de parte de *" . $tradeName . "*. Le compartimos su cotización:";
         $lines[] = "";
 
-        $proformaLine = "📋 *Proforma:* " . $quote->quoteNumber;
+        $proformaLine = "*Proforma:* " . $quote->quoteNumber;
         if (!empty($quote->validUntil)) {
             $formattedDate = date('d/m/Y', strtotime($quote->validUntil));
-            $proformaLine .= " | ⏳ *Válido hasta:* " . $formattedDate;
+            $proformaLine .= " | *Válido hasta:* " . $formattedDate;
         }
         $lines[] = $proformaLine;
         $lines[] = "";
 
-        $lines[] = "💻 *Equipos Cotizados:*";
+        $lines[] = "*Equipos Cotizados:*";
         foreach ($quote->items as $item) {
-            $days = $warranties[$item->productId] ?? 0;
-            $warrantyLabel = $this->formatWarrantyText((int) $days);
+            $prod = $products->get($item->productId);
+            $hwDays = (int) ($prod?->warranty_hardware_days ?: ($prod?->warranty_days ?: 0));
+            $swDays = (int) ($prod?->warranty_software_days ?: 0);
+            $warrantyLabel = $this->formatAutonomousWarrantyText($hwDays, $swDays);
 
             $lines[] = sprintf(
                 "• *%dx %s* — *Bs. %s*",
@@ -63,23 +67,24 @@ final class WhatsAppQuoteService
                 $item->productName,
                 number_format($item->subtotal, 2, '.', ',')
             );
-            $lines[] = "  └ 🛡️ *Garantía:* " . $warrantyLabel;
+            $lines[] = "  - *Garantía:* " . $warrantyLabel;
         }
 
         $lines[] = "";
         if ($quote->discountAmount > 0) {
             $lines[] = "Subtotal: Bs. " . number_format($quote->subtotal, 2, '.', ',') . " (Descuento: -Bs. " . number_format($quote->discountAmount, 2, '.', ',') . ")";
         }
-        $lines[] = "💰 *TOTAL A PAGAR: Bs. " . number_format($quote->totalAmount, 2, '.', ',') . "*";
+        $lines[] = "*TOTAL A PAGAR: Bs. " . number_format($quote->totalAmount, 2, '.', ',') . "*";
 
         if (!empty($quote->notes)) {
-            $lines[] = "📝 _" . $quote->notes . "_";
+            $lines[] = "";
+            $lines[] = "_" . trim($quote->notes) . "_";
         }
 
         $lines[] = "";
-        $lines[] = "🎁 *Cortesía:* Configuración inicial y programas esenciales sin costo.";
+        $lines[] = "• *Cortesía:* Configuración inicial y programas esenciales sin costo.";
 
-        // Formas de pago compactas en una sola línea
+        // Formas de pago compactas y ejecutivas
         $paymentParts = [];
         if ($hasQr) {
             $paymentParts[] = "Pago rápido con QR (Simple)";
@@ -91,19 +96,20 @@ final class WhatsAppQuoteService
         }
         $paymentParts[] = "Efectivo";
 
-        $lines[] = "💳 *Formas de pago:* " . implode(' | ', $paymentParts) . ".";
+        $lines[] = "• *Formas de pago:* " . implode(' | ', $paymentParts) . ".";
 
         // URL pública de impresión / descarga PDF protegida por token criptográfico
         $token = !empty($quote->publicToken) ? $quote->publicToken : $quote->id;
         $printUrl = url("/api/quotes/public/{$token}/print");
         $lines[] = "";
-        $lines[] = "📄 *Ver Proforma en PDF:*";
-        $lines[] = "👉 " . $printUrl;
-
+        $lines[] = "*Ver Proforma en PDF:*";
+        $lines[] = $printUrl;
 
         $lines[] = "";
-        $lines[] = "⚡ ¿Desea que se lo reservemos para entrega hoy mismo? Solo responda a este mensaje. 😊";
-        $lines[] = "📍 " . $city . ($address ? " — " . $address : "");
+        $lines[] = "¿Desea que se lo reservemos para entrega hoy mismo? Solo responda a este mensaje.";
+        if (!empty($city) || !empty($address)) {
+            $lines[] = $city . ($address ? " — " . $address : "");
+        }
 
         return implode("\n", $lines);
     }
@@ -128,19 +134,33 @@ final class WhatsAppQuoteService
         return "https://wa.me/?text={$encodedText}";
     }
 
-    private function formatWarrantyText(int $days): string
+    private function formatAutonomousWarrantyText(int $hwDays, int $swDays): string
     {
-        if ($days <= 0) {
+        if ($hwDays <= 0 && $swDays <= 0) {
             return 'Garantía técnica de tienda';
         }
+
+        if ($hwDays > 0 && $swDays > 0) {
+            return 'HW: ' . $this->formatPeriodText($hwDays) . ' | Software: ' . $this->formatPeriodText($swDays);
+        }
+
+        if ($hwDays > 0) {
+            return $this->formatPeriodText($hwDays) . ' de Garantía Oficial';
+        }
+
+        return 'Software: ' . $this->formatPeriodText($swDays);
+    }
+
+    private function formatPeriodText(int $days): string
+    {
         if ($days % 365 === 0) {
             $years = $days / 365;
-            return $years === 1 ? '12 meses (1 año) de Garantía Oficial' : ($years * 12) . " meses de Garantía Oficial";
+            return $years === 1 ? '12 meses (1 año)' : ($years * 12) . " meses ({$years} años)";
         }
         if ($days % 30 === 0) {
             $months = $days / 30;
-            return "{$months} meses de Garantía Oficial";
+            return "{$months} meses";
         }
-        return "{$days} días de Garantía Oficial";
+        return "{$days} días";
     }
 }

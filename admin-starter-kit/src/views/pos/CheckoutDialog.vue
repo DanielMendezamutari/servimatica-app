@@ -149,13 +149,19 @@ async function submitPayment() {
     discount_amount: parsedDiscount.value,
     cash_tendered: isCash.value ? parsedTendered.value : totalToPay.value,
     quote_id: props.quoteId || null,
-    items: props.cart.map(item => ({
-      product_id: item.id,
-      quantity: item.quantity,
-      unit_price: Number(item.sale_price ?? item.salePrice ?? 0),
-      warranty_days: item.warranty_days !== undefined && item.warranty_days !== null ? Number(item.warranty_days) : 0,
-      serial_number: item.serial_number?.trim() || null,
-    })),
+    items: props.cart.map(item => {
+      const hwDays = Number(item.warranty_hardware_days ?? item.warranty_days ?? 0)
+      const swDays = Number(item.warranty_software_days ?? 0)
+      return {
+        product_id: item.id,
+        quantity: item.quantity,
+        unit_price: Number(item.sale_price ?? item.salePrice ?? 0),
+        warranty_days: hwDays,
+        warranty_hardware_days: hwDays,
+        warranty_software_days: swDays,
+        serial_number: item.serial_number?.trim() || null,
+      }
+    }),
   }
 
   try {

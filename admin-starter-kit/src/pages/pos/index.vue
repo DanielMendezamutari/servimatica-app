@@ -39,7 +39,8 @@ const loadedQuoteId = ref(null)
 // Modal Ergonómico de Garantía y Serie (S/N)
 const warrantyModalOpen = ref(false)
 const selectedCartItem = ref(null)
-const editingWarrantyDays = ref(0)
+const editingHardwareDays = ref(0)
+const editingSoftwareDays = ref(0)
 const editingSerialNumber = ref('')
 const warrantySerialInputRef = ref(null)
 
@@ -53,9 +54,22 @@ const posWarrantyPresets = [
   { title: '730 días (2a)', value: 730 },
 ]
 
+function formatShortWarranty(days) {
+  const d = Number(days ?? 0)
+  if (d <= 0) return '0d'
+  if (d === 15) return '15d'
+  if (d === 30) return '1m'
+  if (d === 90) return '3m'
+  if (d === 180) return '6m'
+  if (d === 365) return '1a'
+  if (d === 730) return '2a'
+  return `${d}d`
+}
+
 function openWarrantyModal(item) {
   selectedCartItem.value = item
-  editingWarrantyDays.value = item.warranty_days ?? 0
+  editingHardwareDays.value = item.warranty_hardware_days ?? item.warranty_days ?? 0
+  editingSoftwareDays.value = item.warranty_software_days ?? 0
   editingSerialNumber.value = item.serial_number ?? ''
   warrantyModalOpen.value = true
   nextTick(() => {
@@ -65,7 +79,11 @@ function openWarrantyModal(item) {
 
 function saveWarrantyModal() {
   if (selectedCartItem.value) {
-    selectedCartItem.value.warranty_days = Number(editingWarrantyDays.value) || 0
+    const hw = Number(editingHardwareDays.value) || 0
+    const sw = Number(editingSoftwareDays.value) || 0
+    selectedCartItem.value.warranty_days = hw
+    selectedCartItem.value.warranty_hardware_days = hw
+    selectedCartItem.value.warranty_software_days = sw
     selectedCartItem.value.serial_number = editingSerialNumber.value ? editingSerialNumber.value.trim() : ''
   }
   warrantyModalOpen.value = false
@@ -146,6 +164,8 @@ function addToCart(product) {
       error.value = `Stock máximo disponible para ${product.name}: ${product.stock} unidades.`
     }
   } else {
+    const hwDays = Number(product.warranty_hardware_days ?? product.warrantyHardwareDays ?? product.warranty_days ?? product.warrantyDays ?? 0)
+    const swDays = Number(product.warranty_software_days ?? product.warrantySoftwareDays ?? 0)
     cart.value.push({
       id: product.id,
       name: product.name,
@@ -153,7 +173,9 @@ function addToCart(product) {
       sale_price: Number(product.salePrice ?? product.sale_price ?? 0),
       stock: product.stock,
       quantity: 1,
-      warranty_days: Number(product.warranty_days ?? product.warrantyDays ?? 0),
+      warranty_days: hwDays,
+      warranty_hardware_days: hwDays,
+      warranty_software_days: swDays,
       serial_number: '',
     })
   }
@@ -577,16 +599,31 @@ onMounted(async () => {
 
                 <!-- Fila Compacta de Garantía y Serie (Ergonomía POS) -->
                 <div class="d-flex align-center justify-space-between pt-1 border-top mt-1">
-                  <VChip
-                    size="x-small"
-                    :variant="item.warranty_days > 0 ? 'tonal' : 'outlined'"
-                    :color="item.warranty_days > 0 ? 'primary' : 'secondary'"
-                    class="cursor-pointer"
-                    prepend-icon="ri-shield-check-line"
-                    @click="openWarrantyModal(item)"
-                  >
-                    {{ item.warranty_days > 0 ? `${item.warranty_days}d garantía` : 'Sin garantía' }}
-                  </VChip>
+                  <div class="d-flex align-center gap-1 flex-wrap">
+                    <VChip
+                      size="x-small"
+                      :variant="(item.warranty_hardware_days ?? item.warranty_days) > 0 ? 'tonal' : 'outlined'"
+                      :color="(item.warranty_hardware_days ?? item.warranty_days) > 0 ? 'primary' : 'secondary'"
+                      class="cursor-pointer"
+                      prepend-icon="ri-shield-keyhole-line"
+                      title="Garantía de Hardware (Física)"
+                      @click="openWarrantyModal(item)"
+                    >
+                      {{ (item.warranty_hardware_days ?? item.warranty_days) > 0 ? `HW: ${formatShortWarranty(item.warranty_hardware_days ?? item.warranty_days)}` : 'Sin HW' }}
+                    </VChip>
+
+                    <VChip
+                      size="x-small"
+                      :variant="item.warranty_software_days > 0 ? 'tonal' : 'outlined'"
+                      :color="item.warranty_software_days > 0 ? 'info' : 'secondary'"
+                      class="cursor-pointer"
+                      prepend-icon="ri-computer-line"
+                      title="Garantía de Software (Soporte Lógico)"
+                      @click="openWarrantyModal(item)"
+                    >
+                      {{ item.warranty_software_days > 0 ? `SW: ${formatShortWarranty(item.warranty_software_days)}` : 'Sin SW' }}
+                    </VChip>
+                  </div>
 
                   <div class="d-flex align-center gap-1">
                     <span
@@ -730,24 +767,59 @@ onMounted(async () => {
         </VCardSubtitle>
 
         <VCardText class="pt-3">
+          <!-- Garantía de Hardware -->
           <div class="mb-4">
-            <VLabel class="text-caption font-weight-bold mb-1">Periodo de Garantía:</VLabel>
+            <div class="d-flex align-center gap-1 mb-1">
+              <VIcon icon="ri-shield-check-line" size="18" color="primary" />
+              <VLabel class="text-caption font-weight-bold">Garantía de Hardware:</VLabel>
+            </div>
             <div class="d-flex flex-wrap gap-1 mb-2">
               <VChip
                 v-for="p in posWarrantyPresets"
-                :key="p.value"
+                :key="'hw-' + p.value"
                 size="small"
-                :variant="editingWarrantyDays === p.value ? 'elevated' : 'outlined'"
-                :color="editingWarrantyDays === p.value ? 'primary' : 'default'"
+                :variant="editingHardwareDays === p.value ? 'elevated' : 'outlined'"
+                :color="editingHardwareDays === p.value ? 'primary' : 'default'"
                 class="cursor-pointer"
-                @click="editingWarrantyDays = p.value"
+                @click="editingHardwareDays = p.value"
               >
                 {{ p.title }}
               </VChip>
             </div>
             <VTextField
-              v-model.number="editingWarrantyDays"
-              label="Días exactos de garantía"
+              v-model.number="editingHardwareDays"
+              label="Días de hardware"
+              type="number"
+              min="0"
+              density="compact"
+              variant="outlined"
+              suffix="días"
+              hide-details
+            />
+          </div>
+
+          <!-- Garantía de Software -->
+          <div class="mb-4">
+            <div class="d-flex align-center gap-1 mb-1">
+              <VIcon icon="ri-code-box-line" size="18" color="info" />
+              <VLabel class="text-caption font-weight-bold">Garantía de Software:</VLabel>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mb-2">
+              <VChip
+                v-for="p in posWarrantyPresets"
+                :key="'sw-' + p.value"
+                size="small"
+                :variant="editingSoftwareDays === p.value ? 'elevated' : 'outlined'"
+                :color="editingSoftwareDays === p.value ? 'info' : 'default'"
+                class="cursor-pointer"
+                @click="editingSoftwareDays = p.value"
+              >
+                {{ p.title }}
+              </VChip>
+            </div>
+            <VTextField
+              v-model.number="editingSoftwareDays"
+              label="Días de software"
               type="number"
               min="0"
               density="compact"
